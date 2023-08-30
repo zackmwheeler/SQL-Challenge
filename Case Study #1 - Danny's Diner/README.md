@@ -59,3 +59,6 @@ B | 6
 C | 2
 
 ---
+
+<h4>3. What was the first item from the menu purchased by each customer?</h4>
+
