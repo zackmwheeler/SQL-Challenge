@@ -349,3 +349,144 @@ Order by sales.customer_id;
 
 <h4>10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi — how many points do customer A and B have at the end of January?</h4>
 
+```
+WITH cte_points as (
+  Select
+  	menu.product_id
+  ,	sales.customer_id
+  ,	CASE
+  		WHEN menu.product_id = 1 THEN menu.price * 20
+  		WHEN sales.order_date BETWEEN members.join_date and (members.join_date + interval '6 day') THEN menu.price * 20
+  		ELSE menu.price * 10
+  		END as points
+  From dannys_diner.menu
+  INNER JOIN dannys_diner.sales
+  	on menu.product_id = sales.product_id
+  INNER JOIN dannys_diner.members
+  	on sales.customer_id = members.customer_id
+  WHERE sales.order_date <= '2021-01-31'
+)
+
+Select
+	customer_id
+,	SUM(cte_points.points) as total_points
+From cte_points
+Group by customer_id
+Order by customer_id;
+```
+
+<h4>Steps Used:</h4>
+  <ul>
+    <li>I started with the previous CTE from the question before.  This time I used <b>INNER JOIN</b> on both <tt>dannys_diner.sales</tt> and <tt>dannys_diner.members</tt> to have access to the columns needed.</li>
+    <li>I added a new part to the <b>CASE</b> function where it looks at the <tt>sales.order_date</tt> and checks if it is <b>BETWEEN</b> <tt>members.join_date</tt> and <tt>members.join_date</tt> + <b>INTERVAL '6 day'</b>.  If it is, then they get double points, just as they would with sushi.  If not then they get the normal amount of points.</li>
+    <li>Finally I added a <b>WHERE</b> clause to the end of the CTE so it will only check up to <b>'2021-01-31'</b> on the <tt>sales.order_date</tt> to find all points up until the end of January.</li>
+  </ul>
+
+<h4>Answer:</h4>
+
+| customer_id | total_points |
+| ----------- | ------------ |
+| A           | 1370         |
+| B           | 820          |
+
+---
+
+<h4>Bonus Question: Join All The Things</h4>
+
+```
+Select
+	sales.customer_id
+,	sales.order_date
+,	menu.product_name
+,	menu.price
+,	CASE
+  		WHEN sales.order_date >= members.join_date THEN 'Y'
+  		ELSE 'N' END as member
+From dannys_diner.sales
+INNER JOIN dannys_diner.menu
+	on sales.product_id = menu.product_id
+LEFT JOIN dannys_diner.members
+	on sales.customer_id = members.customer_id
+Order by 
+	sales.customer_id
+,	sales.order_date;
+```
+
+<h4>Answer:</h4>
+
+| customer_id | order_date               | product_name | price | member |
+| ----------- | ------------------------ | ------------ | ----- | ------ |
+| A           | 2021-01-01T00:00:00.000Z | sushi        | 10    | N      |
+| A           | 2021-01-01T00:00:00.000Z | curry        | 15    | N      |
+| A           | 2021-01-07T00:00:00.000Z | curry        | 15    | Y      |
+| A           | 2021-01-10T00:00:00.000Z | ramen        | 12    | Y      |
+| A           | 2021-01-11T00:00:00.000Z | ramen        | 12    | Y      |
+| A           | 2021-01-11T00:00:00.000Z | ramen        | 12    | Y      |
+| B           | 2021-01-01T00:00:00.000Z | curry        | 15    | N      |
+| B           | 2021-01-02T00:00:00.000Z | curry        | 15    | N      |
+| B           | 2021-01-04T00:00:00.000Z | sushi        | 10    | N      |
+| B           | 2021-01-11T00:00:00.000Z | sushi        | 10    | Y      |
+| B           | 2021-01-16T00:00:00.000Z | ramen        | 12    | Y      |
+| B           | 2021-02-01T00:00:00.000Z | ramen        | 12    | Y      |
+| C           | 2021-01-01T00:00:00.000Z | ramen        | 12    | N      |
+| C           | 2021-01-01T00:00:00.000Z | ramen        | 12    | N      |
+| C           | 2021-01-07T00:00:00.000Z | ramen        | 12    | N      |
+
+---
+
+<h4>Bonus Question: Rank All The Things</h4>
+
+```
+WITH cte_customers as (
+	Select
+		sales.customer_id
+	,	sales.order_date
+	,	menu.product_name
+	,	menu.price
+	,	CASE
+	  		WHEN sales.order_date >= members.join_date THEN 'Y'
+	  		ELSE 'N' END as member       
+	From dannys_diner.sales
+	INNER JOIN dannys_diner.menu
+		on sales.product_id = menu.product_id
+	LEFT JOIN dannys_diner.members
+		on sales.customer_id = members.customer_id
+	Order by 
+		sales.customer_id
+	,	sales.order_date
+)
+
+Select
+	*
+,	CASE
+		WHEN member = 'N' THEN NULL
+        ELSE RANK() OVER (
+          Partition by customer_id, member
+          Order by order_date
+    ) END as ranking
+From cte_customers;
+```
+
+<h4>Answer:</h4>
+
+| customer_id | order_date               | product_name | price | member | ranking |
+| ----------- | ------------------------ | ------------ | ----- | ------ | ------- |
+| A           | 2021-01-01T00:00:00.000Z | sushi        | 10    | N      |         |
+| A           | 2021-01-01T00:00:00.000Z | curry        | 15    | N      |         |
+| A           | 2021-01-07T00:00:00.000Z | curry        | 15    | Y      | 1       |
+| A           | 2021-01-10T00:00:00.000Z | ramen        | 12    | Y      | 2       |
+| A           | 2021-01-11T00:00:00.000Z | ramen        | 12    | Y      | 3       |
+| A           | 2021-01-11T00:00:00.000Z | ramen        | 12    | Y      | 3       |
+| B           | 2021-01-01T00:00:00.000Z | curry        | 15    | N      |         |
+| B           | 2021-01-02T00:00:00.000Z | curry        | 15    | N      |         |
+| B           | 2021-01-04T00:00:00.000Z | sushi        | 10    | N      |         |
+| B           | 2021-01-11T00:00:00.000Z | sushi        | 10    | Y      | 1       |
+| B           | 2021-01-16T00:00:00.000Z | ramen        | 12    | Y      | 2       |
+| B           | 2021-02-01T00:00:00.000Z | ramen        | 12    | Y      | 3       |
+| C           | 2021-01-01T00:00:00.000Z | ramen        | 12    | N      |         |
+| C           | 2021-01-01T00:00:00.000Z | ramen        | 12    | N      |         |
+| C           | 2021-01-07T00:00:00.000Z | ramen        | 12    | N      |         |
+
+
+<h2>Thank you for checking out my solutions to Case Study #1 - Danny's Diner from the 8 Week SQL Challenge!
+If you would like to do it yourself, <a href = "https://8weeksqlchallenge.com/case-study-1/">Click here!</a></h2>
