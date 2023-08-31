@@ -69,7 +69,7 @@ WITH cte_ranked as (
   ,	sales.order_date
   ,	menu.product_name
   ,	dense_rank() over(
-          partition by customer_id
+          partition by sales.customer_id
           order by
               sales.order_date) as rank
   From dannys_diner.sales
@@ -79,12 +79,12 @@ WITH cte_ranked as (
   
 Select
 	customer_id
-  ,	product_name
+,	product_name
 From cte_ranked
 where rank = 1
 group by
 	customer_id
-  ,	product_name;
+,	product_name;
 ```
 
 <h4>Steps Used:</h4>
@@ -93,7 +93,7 @@ group by
     <li>In the outerquery I <b>SELECT</b> <tt>customer_id</tt> and <tt>produyct_name</tt> from the new cte table I made(<tt>cte_ranked</tt>).  I then used the <b>GROUP BY</b> function on both <tt>customer_id</tt> and <tt>produyct_name</tt>.  With the <b>WHERE</b> clause will pull the product that is ranked '1'.</li>
   </ul>
 
-  <h4>Answer:</h4>
+<h4>Answer:</h4>
   
 | customer_id | product_name |
 | ----------- | ------------ |
@@ -106,4 +106,246 @@ We can see that customer 'A' bought two items the first time, which shows here. 
 
 ---
 
+<h4>4. What is the most purchased item on the menu and how many times was it purchased by all customers?</h4>
+
+```
+Select
+	menu.product_name
+,	COUNT(sales.product_id) as number_sold
+From dannys_diner.sales
+INNER JOIN dannys_diner.menu
+	on sales.product_id = menu.product_id
+Group by menu.product_name
+Order by number_sold DESC
+LIMIT 1;
+```
+
+<h4>Steps Used:</h4>
+  <ul>
+    <li>I used the <b>COUNT</b> function on <tt>sales.product_id</tt> to count the amount of each item was sold(<tt>number_sold</tt>).</li>
+    <li>Then I used <b>ORDER BY DESC</b> to show the most to least sold.</li>
+    <li>Finally used <b>LIMIT 1</b> to show only the product that sold the most.</li>
+  </ul>
+
+<h4>Answer:</h4>
+
+| product_name | number_sold |
+| ------------ | ----------- |
+| ramen        | 8           |
+
+---
+
+<h4>5. Which item was the most popular for each customer?</h4>
+
+```
+WITH cte_ranked as (
+  Select 
+  	sales.customer_id
+  ,	menu.product_name
+  ,	COUNT(sales.product_id) as number_sold
+  ,	dense_rank() over(
+          partition by sales.customer_id
+          order by
+              COUNT(sales.customer_id) desc
+  	) as rank
+  From dannys_diner.sales
+  INNER JOIN dannys_diner.menu
+      on sales.product_id = menu.product_id
+  group by
+  	sales.customer_id
+  ,	menu.product_name
+)
+  
+Select
+	customer_id
+,	product_name
+,	number_sold
+From cte_ranked
+where rank = 1;
+```
+
+<h4>Steps Used:</h4>
+  <ul>
+    <li>Started by creating a CTE(<tt>cte_ranked</tt>).</li>
+    <li>In the CTE I used <b>DENSE_RANK()</b> again to calculate the ranking of each <tt>sales.customer_id</tt> partition by the number of orders of <b>COUNT(<tt>sales.customer_id</tt>)</b> in descending order.</li>
+    <li>In the outer query is where I chose the 3 columns to be used and used the <b>WHERE</b> clause to choose the products that are only ranked 1.</li>
+  </ul>
+
+<h4>Answer:</h4>
+
+| customer_id | product_name | number_sold |
+| ----------- | ------------ | ----------- |
+| A           | ramen        | 3           |
+| B           | ramen        | 2           |
+| B           | curry        | 2           |
+| B           | sushi        | 2           |
+| C           | ramen        | 3           |
+
+Here we see customer 'B' with all 3 items ranked the same, which means they choose them all the same amount.  Customers 'A' and 'C' both have ramen as their favorite.
+
+---
+
+<h4>6. Which item was purchased first by the customer after they became a member?</h4>
+
+```
+WITH cte_became_member as (
+  Select 
+  	members.customer_id
+  ,	sales.product_id
+  ,	ROW_NUMBER() over(
+          partition by members.customer_id
+          order by
+              sales.order_date
+  	) as rank
+  From dannys_diner.members
+  INNER JOIN dannys_diner.sales
+  	on members.customer_id = sales.customer_id
+  	and sales.order_date > members.join_date
+)
+  
+Select
+	customer_id
+,	menu.product_name
+From cte_became_member
+INNER JOIN dannys_diner.menu
+	on cte_became_member.product_id = menu.product_id
+where rank = 1
+order by customer_id;
+```
+
+<h4>Steps Used:</h4>
+  <ul>
+    <li>Started by creating a CTE(<tt>cte_became_member</tt>).</li>
+    <li>In the CTE I used <b>ROW_NUMBER()</b> to order each <tt>members.customer_id</tt> partition by the order date <tt>sales.order_date</tt>.  Then used <b>INNER JOIN</b> on <tt>dannys_diner.members</tt> and <tt>dannys_diner.sales</tt> on <tt>customer_id</tt> of both and any <tt>sales.order_date</tt> that was after <tt>members.join_date</tt>.</li>
+    <li>In the outer query I used <b>INNER JOIN</b> on the CTE table we just created (<tt>cte_became_member</tt>) and <tt>dannys_diner.menu</tt> in order to pull <tt>menu.product_name</tt>.  With the <b>WHERE</b> clause I made it so that it will only grab the first date.  Then finally I ordered it by <tt>customer_id</tt>.</li>
+  </ul>
+
+<h4>Answer:</h4>
+
+| customer_id | product_name |
+| ----------- | ------------ |
+| A           | ramen        |
+| B           | sushi        |
+
+---
+
+<h4>7. Which item was purchased just before the customer became a member?</h4>
+
+```
+WITH cte_before_member as (
+  Select 
+  	members.customer_id
+  ,	sales.product_id
+  ,	ROW_NUMBER() over(
+          partition by members.customer_id
+          order by
+              sales.order_date desc
+  	) as rank
+  From dannys_diner.members
+  INNER JOIN dannys_diner.sales
+  	on members.customer_id = sales.customer_id
+  	and sales.order_date < members.join_date
+)
+  
+Select
+	customer_id
+,	menu.product_name
+From cte_before_member
+INNER JOIN dannys_diner.menu
+	on cte_before_member.product_id = menu.product_id
+where rank = 1
+order by customer_id;
+```
+
+<h4>Steps Used:</h4>
+  <ul>
+    <li>Started by creating a CTE(<tt>cte_before_member</tt>).</li>
+    <li>In the CTE I used <b>ROW_NUMBER()</b> to order each <tt>members.customer_id</tt> partition by the order date <tt>sales.order_date</tt> in descending order.  Then used <b>INNER JOIN</b> on <tt>dannys_diner.members</tt> and <tt>dannys_diner.sales</tt> on <tt>customer_id</tt> of both and any <tt>sales.order_date</tt> that was before <tt>members.join_date</tt>.</li>
+    <li>In the outer query I used <b>INNER JOIN</b> on the CTE table we just created (<tt>cte_before_member</tt>) and <tt>dannys_diner.menu</tt> in order to pull <tt>menu.product_name</tt>.  With the <b>WHERE</b> clause I made it so that it will only grab the date the is first in descending order(or the last one before becoming a member).  Then finally I ordered it by <tt>customer_id</tt>.</li>
+  </ul>
+
+<h4>Answer:</h4>
+
+| customer_id | product_name |
+| ----------- | ------------ |
+| A           | sushi        |
+| B           | sushi        |
+
+---
+
+<h4>8. What is the total items and amount spent for each member before they became a member?</h4>
+
+```
+Select 
+	members.customer_id
+  ,	COUNT(sales.product_id)
+  ,	SUM(menu.price)
+From dannys_diner.members
+INNER JOIN dannys_diner.sales
+	on members.customer_id = sales.customer_id
+  	and sales.order_date < members.join_date
+INNER JOIN dannys_diner.menu
+	on sales.product_id = menu.product_id
+group by
+	members.customer_id
+order by
+	members.customer_id;
+```
+
+<h4>Steps Used:</h4>
+  <ul>
+    <li>Decided what columns would be needed. <tt>members.customer_id</tt> then I needed the amount of items sold (<b>COUNT(<tt>sales.product_id</tt>)</b>.  Finally needed the total spent on items which is in the <b>SUM(<tt>menu.price</tt>)</b>.</li>
+    <li>In order to get all the columns I needed I had to join all 3 tables together.  Since I needed to find the amount spent by members before becoming they became member I needed to <b>INNER JOIN</b> <tt>dannys_diner.members</tt> and <tt>dannys_diner.sales</tt> on <tt>customer_id</tt> on both and any sales before they became a member.</li>
+    <li>Finally I needed the prices which is in the <tt>dannys_diner.menu</tt> table so I used <b>INNER JOIN</b> with <tt>dannys_diner.sales</tt>.</li>
+  </ul>
+
+<h4>Answer:</h4>
+
+| customer_id | count | sum |
+| ----------- | ----- | --- |
+| A           | 2     | 25  |
+| B           | 3     | 40  |
+
+---
+
+<h4>9. If each $1 spent equates to 10 points and sushi has a 2x points multiplier — how many points would each customer have?</h4>
+
+```
+WITH cte_points as (
+  Select
+  	menu.product_id
+  ,	CASE
+  		WHEN menu.product_id = 1 THEN price * 20
+  		ELSE price * 10 
+  		END as points
+  From dannys_diner.menu
+)
+
+Select
+	sales.customer_id
+,	SUM(cte_points.points) as total_points
+From dannys_diner.sales
+INNER JOIN cte_points
+	on sales.product_id = cte_points.product_id
+Group by sales.customer_id
+Order by sales.customer_id;
+```
+
+<h4>Steps Used:</h4>
+  <ul>
+    <li>Created a CTE (<tt>cte_points</tt>) where it takes the <tt>menu.product_id</tt> and multiplies the price by the amount of points earned ( 10 or 20).  Since sushi has the <tt>menu.product_id</tt> of 1 we mulyiplied it by 20 and all others would be by 10.</li>
+    <li>In the outer query I calculated the <tt>total_points</tt> and <b>GROUP BY</b> <tt>sales.customer_id</tt>.</li>
+  </ul>
+
+<h4>Answer:</h4>
+
+| customer_id | total_points |
+| ----------- | ------------ |
+| A           | 860          |
+| B           | 940          |
+| C           | 360          |
+
+---
+
+<h4>10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi — how many points do customer A and B have at the end of January?</h4>
 
