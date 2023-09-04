@@ -23,14 +23,14 @@ SELECT
 ,	pizza_id
 ,	CASE
 		WHEN exclusions = '' THEN NULL
-        WHEN exclusions = 'null' THEN NULL
-        ELSE exclusions
-        END as exclusions
+        	WHEN exclusions = 'null' THEN NULL
+		ELSE exclusions
+        	END as exclusions
 ,	CASE
 		WHEN extras = '' THEN NULL
-        WHEN extras = 'null' THEN NULL
-        ELSE extras
-        END as extras
+        	WHEN extras = 'null' THEN NULL
+        	ELSE extras
+        	END as extras
 ,	order_time
 FROM pizza_runner.customer_orders;
 ```
@@ -43,25 +43,25 @@ SELECT
 ,	runner_id
 ,	CASE
 		WHEN pickup_time = 'null' THEN NULL
-        ELSE pickup_time
-        END as pickup_time
+        	ELSE pickup_time
+        	END as pickup_time
 ,	CASE
 		WHEN distance = 'null' THEN NULL
-        ELSE distance
-        END as distance
+        	WHEN distance LIKE '&km' THEN TRIM('km' from distance)
+        	ELSE distance
+        	END as distance
 ,	CASE
 		WHEN duration = 'null' THEN NULL
-        ELSE duration
-        END as duration
-,	CASE
-		WHEN duration = 'null' THEN NULL
-        ELSE duration
-        END as duration
+        	WHEN duration LIKE '&mins' THEN TRIM('mins' from distance)
+        	WHEN duration LIKE '&minute' THEN TRIM('minute' from distance)
+        	WHEN duration LIKE '&minutes' THEN TRIM('minutes' from distance)
+        	ELSE duration
+        	END as duration
 ,	CASE
 		WHEN cancellation = '' THEN NULL
-        WHEN cancellation = 'null' THEN NULL
-        ELSE cancellation
-        END as cancellation
+        	WHEN cancellation = 'null' THEN NULL
+        	ELSE cancellation
+        	END as cancellation
 FROM pizza_runner.runner_orders;
 ```
 
@@ -69,9 +69,9 @@ For the `runner_orders` table, I also needed to change a few columns into a diff
 
 ```
 ALTER TABLE runner_orders1
-ALTER COLUMN pickup_time DATETIME,
-ALTER COLUMN distance FLOAT,
-ALTER COLUMN duration INT,
+	ALTER COLUMN pickup_time DATETIME
+,	ALTER COLUMN distance FLOAT
+,	ALTER COLUMN duration INT;
 ```
 
 Now it should be good to start working on it!
