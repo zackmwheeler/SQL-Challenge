@@ -1,1 +1,53 @@
+# Case Study #2 - Pizza Runner
+
+## B. Runner and Customer Experience
+
+### Questions and Solutions
+
+#### 1. How many runners signed up for each 1 week period? (i.e. week starts 2021-01-01)
+
+```
+SELECT
+	DATE_TRUNC('WEEK', registration_date) as registration_week
+,	COUNT(runner_id) as number_registered
+FROM pizza_runner.runners
+GROUP BY registration_week
+ORDER BY registration_week;
+```
+
+#### Answer:
+
+| registration_week        | number_registered |
+| ------------------------ | ----------------- |
+| 2020-12-28T00:00:00.000Z | 2                 |
+| 2021-01-04T00:00:00.000Z | 1                 |
+| 2021-01-11T00:00:00.000Z | 1                 |
+
+---
+
+#### 2. What was the average time in minutes it took for each runner to arrive at the Pizza Runner HQ to pickup the order?
+
+```
+SELECT
+	r.runner_id
+,	AVG(EXTRACT(MINUTE FROM(r.pickup_time::timestamp - c.order_time))) as min_to_pickup
+FROM customer_orders1 c
+INNER JOIN runner_orders1 r
+	ON c.order_id = r.order_id
+WHERE r.pickup_time IS NOT NULL
+GROUP BY r.runner_id
+ORDER BY r.runner_id;
+```
+
+#### Answer:
+
+| runner_id | min_to_pickup      |
+| --------- | ------------------ |
+| 1         | 15.333333333333334 |
+| 2         | 23.4               |
+| 3         | 10                 |
+
+---
+
+#### 3. Is there any relationship between the number of pizzas and how long the order takes to prepare?
 
