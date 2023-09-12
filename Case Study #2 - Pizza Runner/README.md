@@ -47,8 +47,7 @@ SELECT
         	END as pickup_time
 ,	CASE
 		WHEN distance = 'null' THEN NULL
-        	WHEN distance LIKE '&km' THEN TRIM('km' from distance)
-        	ELSE distance
+        	ELSE TRIM('km ' from distance)
         	END as distance
 ,	CASE
 		WHEN duration = 'null' THEN NULL
