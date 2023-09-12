@@ -51,10 +51,7 @@ SELECT
         	END as distance
 ,	CASE
 		WHEN duration = 'null' THEN NULL
-        	WHEN duration LIKE '&mins' THEN TRIM('mins' from distance)
-        	WHEN duration LIKE '&minute' THEN TRIM('minute' from distance)
-        	WHEN duration LIKE '&minutes' THEN TRIM('minutes' from distance)
-        	ELSE duration
+        	ELSE TRIM('minutes ' from duration)
         	END as duration
 ,	CASE
 		WHEN cancellation = '' THEN NULL
