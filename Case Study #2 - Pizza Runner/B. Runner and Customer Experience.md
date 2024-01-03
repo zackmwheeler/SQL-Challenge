@@ -51,3 +51,28 @@ ORDER BY r.runner_id;
 
 #### 3. Is there any relationship between the number of pizzas and how long the order takes to prepare?
 
+```
+WITH prep_time_cte AS
+(
+  SELECT 
+	c.order_id
+,	COUNT(c.order_id) AS pizza_order
+,	c.order_time
+,	r.pickup_time
+,	DATEDIFF(MINUTE, c.order_time, r.pickup_time) AS prep_time_minutes
+  FROM #customer_orders AS c
+  JOIN #runner_orders AS r
+    ON c.order_id = r.order_id
+  WHERE r.distance != 0
+  GROUP BY c.order_id, c.order_time, r.pickup_time
+)
+
+SELECT 
+  pizza_order, 
+  AVG(prep_time_minutes) AS avg_prep_time_minutes
+FROM prep_time_cte
+WHERE prep_time_minutes > 1
+GROUP BY pizza_order;
+```
+
+#### Answer:
