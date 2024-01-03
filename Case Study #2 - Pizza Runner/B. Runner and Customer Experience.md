@@ -55,15 +55,15 @@ ORDER BY r.runner_id;
 WITH prep_time_cte AS
 (
   SELECT 
-	c.order_id
+    c.order_id
 ,	COUNT(c.order_id) AS pizza_order
 ,	c.order_time
 ,	r.pickup_time
-,	DATEDIFF(MINUTE, c.order_time, r.pickup_time) AS prep_time_minutes
-  FROM #customer_orders AS c
-  JOIN #runner_orders AS r
+,	EXTRACT(MINUTE FROM(r.pickup_time::timestamp - c.order_time)) AS prep_time_minutes
+  FROM customer_orders1 c
+  JOIN runner_orders1 r
     ON c.order_id = r.order_id
-  WHERE r.distance != 0
+  WHERE r.distance IS NOT NULL
   GROUP BY c.order_id, c.order_time, r.pickup_time
 )
 
@@ -76,3 +76,48 @@ GROUP BY pizza_order;
 ```
 
 #### Answer:
+
+| pizza_order | avg_prep_time_minutes |
+| ----------- | --------------------- |
+| 3           | 29                    |
+| 2           | 18                    |
+| 1           | 12                    |
+
+On average a single pizza takes 12 minutes to prepare.
+
+When ordering 3 pizzas it takes 29 minutes to make a pizza, which is 9.67 minutes per pizza making it quicker than the 12 minutes for a single order.
+
+When ordering 2 pizzas it only takes 18 minutes, which is 9 minutes per piza making it the most efficient.
+
+---
+
+#### 4. What was the average distance travelled for each customer?
+
+```
+SELECT 
+	c.customer_id
+,	AVG(r.distance) AS avg_distance
+FROM customer_orders1 c
+JOIN runner_orders1 r
+  ON c.order_id = r.order_id
+WHERE r.duration IS NOT NULL
+GROUP BY c.customer_id;
+```
+
+#### Answer:
+
+| customer_id | avg_distance |
+| ----------- | ------------ |
+| 101         | 20           |
+| 102         | 16.733333333 |
+| 103         | 23.4         |
+| 104         | 10           |
+| 105         | 25           |
+
+---
+
+#### 5. What was the difference between the longest and shortest delivery times for all orders?
+
+```
+
+```
