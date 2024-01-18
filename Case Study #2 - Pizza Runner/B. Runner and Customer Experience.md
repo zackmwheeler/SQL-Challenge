@@ -165,7 +165,7 @@ FROM runner_orders1
 GROUP BY runner_id;
 ```
 
-#### Answer
+#### Answer:
 
 | runner_id | successful_order_percentage |
 | --------- | --------------------------- |
