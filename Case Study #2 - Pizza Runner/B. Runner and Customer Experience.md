@@ -119,5 +119,59 @@ GROUP BY c.customer_id;
 #### 5. What was the difference between the longest and shortest delivery times for all orders?
 
 ```
+SELECT
+    MAX(CAST(duration AS INT)) - MIN(CAST(duration AS INT)) AS delivery_time_diff
+FROM runner_orders1;
+```
+
+#### Answer:
+
+| delivery_time_diff |
+| ------------------ |
+| 30                 |
+
+---
+#### 6. What was the average speed for each runner for each delivery and do you notice any trend for these values?
 
 ```
+SELECT 
+	runner_id
+,	AVG(CAST(distance AS DECIMAL(3,1)))
+,	AVG(CAST(duration AS INT))
+FROM runner_orders1
+GROUP BY runner_id;
+```
+
+#### Answer:
+
+| runner_id | avg                 | avg                 |
+| --------- | ------------------- | ------------------- |
+| 3         | 10.0000000000000000 | 15.0000000000000000 |
+| 2         | 23.9333333333333333 | 26.6666666666666667 |
+| 1         | 15.8500000000000000 | 22.2500000000000000 |
+
+---
+
+#### 7. What is the successful delivery percentage for each runner?
+
+```
+SELECT 
+	runner_id
+,	CAST(SUM(CASE
+        WHEN pickup_time IS NULL THEN 0
+        ELSE 1
+    END) as DECIMAL(3,0)) / COUNT(order_id)*100 as successful_order_percentage
+FROM runner_orders1
+GROUP BY runner_id;
+```
+
+**** Answer
+
+| runner_id | successful_order_percentage |
+| --------- | --------------------------- |
+| 3         | 50                          |
+| 2         | 75                          |
+| 1         | 100                         |
+
+---
+
