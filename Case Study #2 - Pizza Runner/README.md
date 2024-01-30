@@ -84,6 +84,3 @@ Case study questions are split into 5 categories.  Links below will access each 
 
 <a href = "https://github.com/zackmwheeler/8-Week-SQL-Challenge/blob/main/Case%20Study%20%232%20-%20Pizza%20Runner/C.%20Ingredient%20Optimisation.md">**C. Ingredient Optimisation**</a>
 
-<a href = "https://github.com/zackmwheeler/8-Week-SQL-Challenge/blob/main/Case%20Study%20%232%20-%20Pizza%20Runner/D.%20Pricing%20and%20Ratings.md">**D. Pricing and Ratings**</a>
-
-<a href = "https://github.com/zackmwheeler/8-Week-SQL-Challenge/blob/main/Case%20Study%20%232%20-%20Pizza%20Runner/E.%20Bonus%20Questions.md">**E. Bonus Questions**</a>
